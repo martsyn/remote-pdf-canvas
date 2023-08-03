@@ -32,9 +32,7 @@ onMounted(() => {
 
 async function loadPdf() {
   if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    const pdfWorker = await import('pdfjs-dist/build/pdf.worker?url')
     pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrcUrl
-    pdfjsLib.GlobalWorkerOptions.workerPort = pdfWorker.port
   }
 
   const pdf = await pdfjsLib.getDocument(
@@ -48,14 +46,19 @@ async function loadPdf() {
   // Support HiDPI-screens.
   const outputScale = window.devicePixelRatio ?? 1
 
-  const context = wrapProxy(ctx)
-
   if (!canvas.value) throw 'not happening'
 
   canvas.value.width = Math.floor(viewport.width * outputScale)
   canvas.value.height = Math.floor(viewport.height * outputScale)
   canvas.value.style.width = Math.floor(viewport.width) + 'px'
   canvas.value.style.height = Math.floor(viewport.height) + 'px'
+
+  const context = wrapProxy<CanvasRenderingContext2D>(ctx, {
+    canvas: {
+      width: canvas.value.width,
+      height: canvas.value.height,
+    },
+  })
 
   const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined
 
