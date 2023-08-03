@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
-import * as pdfjsLib from 'pdfjs-dist'
-import pdfWorkerSrcUrl from 'pdfjs-dist/build/pdf.worker?url'
+import * as pdfLib from 'pdfjs-dist'
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.js?worker'
 import wrapProxy from '@/wrapProxy'
 import type { RenderParameters } from 'pdfjs-dist/types/src/display/api'
+
+import pdfUrl from '@/assets/samplePdfWithImages.pdf?url'
 
 const canvas = ref(undefined as HTMLCanvasElement | undefined)
 
@@ -31,13 +33,9 @@ onMounted(() => {
 })
 
 async function loadPdf() {
-  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrcUrl
-  }
+  pdfLib.GlobalWorkerOptions.workerPort = new PdfWorker()
 
-  const pdf = await pdfjsLib.getDocument(
-    'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf',
-  ).promise
+  const pdf = await pdfLib.getDocument(pdfUrl).promise
 
   const [ctx, page] = await Promise.all([ctxPromise, pdf.getPage(1)])
 
