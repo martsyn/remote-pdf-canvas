@@ -51,17 +51,47 @@ async function loadPdf() {
   canvas.value.style.width = Math.floor(viewport.width) + 'px'
   canvas.value.style.height = Math.floor(viewport.height) + 'px'
 
-  const context = wrapProxy<CanvasRenderingContext2D>(ctx, {
-    canvas: {
-      width: canvas.value.width,
-      height: canvas.value.height,
+  let lastTransform = undefined
+  let lastLineDash = []
+
+  let fallbackProps = {
+    // canvas: {
+    //   width: canvas.value.width,
+    //   height: canvas.value.height,
+    // },
+    canvas: canvas.value,
+    fillStyle: '#000000',
+    filter: 'none',
+  }
+
+  const proxyContext = wrapProxy<CanvasRenderingContext2D>(
+    ctx,
+    fallbackProps,
+    (name, args) => {
+      if (name === 'transform') {
+        const [a, b, c, d, e, f] = args
+        lastTransform = { a, b, c, d, e, f }
+      }
+      if (name === 'getTransform') return lastTransform
+
+      if (name === 'setLineDash') lastLineDash = args[0]
+      if (name === 'getLineDash') return lastLineDash
+
+      const result = ctx[name](...args)
+      if (result !== undefined) console.warn(name, '(', ...args, ') returned', result)
+
+      if (name === 'drawImage') debugger
     },
-  })
+    (name, value) => {
+      ctx[name] = value
+      fallbackProps[name] = value
+    },
+  )
 
   const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined
 
   const renderContext: RenderParameters = {
-    canvasContext: context,
+    canvasContext: proxyContext,
     transform: transform,
     viewport: viewport,
   }

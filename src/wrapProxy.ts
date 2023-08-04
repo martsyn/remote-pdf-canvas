@@ -6,21 +6,42 @@ type RecursivePartial<T> = {
     : T[P]
 }
 
-export default function wrapProxy<T extends object>(target: T, fallback: RecursivePartial<T>): T {
+export default function wrapProxy<T extends object>(
+  target: T,
+  fallbackProps: RecursivePartial<T>,
+  functionCallback: (name: string, args: unknown[]) => void,
+  setterCallback: (name: string, value: unknown) => void,
+): T {
   const handler: ProxyHandler<T> = {
     get(t, p) {
+      if (typeof p !== 'string') return undefined
+
       if (typeof target[p as keyof T] === 'function') {
         return function (...args: Parameters<T[keyof T]>) {
           console.log('calling', p, '(', ...args, ')')
-          return target[p as keyof T](...args)
+          return functionCallback(p, args)
         }
       }
-      console.warn('retrieving non-function prop', p)
-      return fallback[p as keyof T] // target[prop as keyof T]
+      const fallback = fallbackProps[p as keyof T]
+      /*
+      const realValue = target[p as keyof T]
+
+      if (JSON.stringify(fallback) !== JSON.stringify(realValue))
+        console.warn(
+          `retrieving non-function prop ${p}, fallback ${
+            p in fallbackProps ? 'has' : 'does not have'
+          } value`,
+          fallback,
+          'actual value',
+          realValue,
+        )
+
+ */
+      return fallback
     },
     set(t, p, v) {
+      if (typeof p === 'string') setterCallback(p, v)
       console.log('setting', p, '=', v)
-      target[p as keyof T] = v
       return true
     },
   }
