@@ -68,11 +68,17 @@ async function loadPdf() {
     ctx,
     fallbackProps,
     (name, args) => {
-      if (name === 'transform') {
-        const [a, b, c, d, e, f] = args
-        lastTransform = { a, b, c, d, e, f }
+      //      return ctx[name](...args)
+      // if (name === 'transform') {
+      //   const [a, b, c, d, e, f] = args
+      //   lastTransform = { a, b, c, d, e, f }
+      //   console.log('calling transform', lastTransform)
+      // }
+      if (name === 'getTransform') {
+        console.log('getTransform return', lastTransform)
+        console.log('getTransform actual', ctx.getTransform())
+        return lastTransform
       }
-      if (name === 'getTransform') return lastTransform
 
       if (name === 'setLineDash') lastLineDash = args[0]
       if (name === 'getLineDash') return lastLineDash
@@ -80,7 +86,10 @@ async function loadPdf() {
       const result = ctx[name](...args)
       if (result !== undefined) console.warn(name, '(', ...args, ') returned', result)
 
-      if (name === 'drawImage') debugger
+      if (['transform', 'translate', 'scale', 'setTransform', 'restore'].includes(name)) {
+        lastTransform = ctx.getTransform()
+        console.log('called', name, '(', ...args, ')', 'resulting transform', lastTransform)
+      }
     },
     (name, value) => {
       ctx[name] = value

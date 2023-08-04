@@ -41,7 +41,7 @@ export default function wrapProxy<T extends object>(
     },
     set(t, p, v) {
       if (typeof p === 'string') setterCallback(p, v)
-      console.log('setting', p, '=', v)
+      //      console.log('setting', p, '=', v)
       return true
     },
   }
